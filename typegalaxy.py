@@ -48,12 +48,10 @@ for i in range(len(list)):
         # reader = {key:reader[key] for key in reader if key['!! request processed by HyperLeda Tue Apr  4 23:13:07 2023'][0] == "!"}
         # print(reader[0][0])
         for key in reader:
-            # print(key)
             if ((key[0][0] != '!')and(key[4].strip() != '')):
                 line = key[0].lstrip("nearest:B ")
                 line = line.split()
-                # print()
-                line.append(str(key[4]))
+                line.append(float(key[4].strip()))
                 listACW.append(line)
                 continue
             # listACW.append([key[0],key[4]])
@@ -62,7 +60,7 @@ for i in range(len(list)):
                 # row[]
         
 print(len(listACW))
-print(listACW[5][0])
+print(listACW[5])
 # print(len(reader))
 
 print('DONE!')
