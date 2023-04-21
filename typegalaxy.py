@@ -3,37 +3,56 @@ from matplotlib import pyplot as plt
 import numpy as np
 import os
 from urllib.request import urlretrieve
-from PIL import Image, ImageDraw
-# import random
+from PIL import Image
+from astropy.io import fits
+
 
 from keras.layers import Dense, Conv2D, Flatten, MaxPooling2D
 from keras.layers import Dropout, BatchNormalization
 from keras.models import Sequential
 from sklearn.model_selection import train_test_split
+import tensorflow as tf
 
 # import pandas as pd    #  pip install pandas
 # from pathlib import Path
+def save_fitsfile(array, name_dir, m):
+    if (os.path.exists(name_dir) == 0):
+        os.mkdir(name_dir)
+    if m == 1:
+        name = "data"
+    elif m == 0:
+        name = "labels"
+
+    print(len(array), name)
+
+    for i in range(len(array)):
+        # Create a new FITS file with the processed data
+        hdu = fits.PrimaryHDU(array)
+        hdu.writeto(f"{name_dir}/{name}.fits", overwrite=True)
 
 def make_model():
+    img_shape = (64, 64, 1)
+
     model = Sequential()
-    model.add(Conv2D(4, kernel_size=3, activation='relu',
-    input_shape=(32, 32, 1)))
-    model.add(Conv2D(4, kernel_size=3, activation='relu'))
+    model.add(Conv2D (4, kernel_size = 3, \
+            activation = 'relu', input_shape = img_shape))
+    model.add(Conv2D(4, kernel_size = 3, activation = 'relu'))
     model.add(BatchNormalization())
-    model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid',
-    data_format=None))
-    model.add(Dropout(rate=0.3))
-    model.add(Conv2D(8, kernel_size=3, activation='relu'))
-    model.add(Conv2D(8, kernel_size=3, activation='relu'))
+    model.add(MaxPooling2D(pool_size = (2, 2), strides= None, \
+            padding='valid', data_format = None))
+    model.add(Dropout(rate = 0.3))
+    model.add(Conv2D(8, kernel_size = 3, activation = 'relu'))
+    model.add(Conv2D(8, kernel_size = 3, activation = 'relu'))
     model.add(BatchNormalization())
-    model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid',
-    data_format=None))
+    model.add(MaxPooling2D(pool_size = (2, 2), strides = None,\
+            padding = 'valid', data_format = None))
     model.add(Flatten())
-    model.add(Dropout(rate=0.3))
-    model.add(Dense(50, activation="relu"))
-    model.add(Dense(3, activation='softmax'))
-    model.compile(optimizer='adam', loss='categorical_crossentropy',
-    metrics=['accuracy'])
+    model.add(Dropout(rate = 0.3))
+    model.add(Dense(50, activation = "relu"))
+    model.add(Dense(4, activation = "softmax"))
+    model.compile(optimizer = "adam", loss = "categorical_crossentropy",\
+            metrics=['accuracy'])
+
     return model
 
 # data_EL = []
@@ -128,7 +147,24 @@ def Read_RA_DEC(name, dir, file):
 # site = f"http://skyserver.sdss.org/dr14/SkyServerWS/ImgCutout/getjpeg?TaskName=Skyserver.Explore.Image&ra={args.ra}&dec={args.dec}&scale=0.5&width={args.w}&height={args.h}&opt=G"
 # urlretrieve(site, f"{args.name}.jpeg")
 
+def open_file(dir):
+    filename = os.listdir(dir)
+    hdu0 = fits.open(os.path.join(dir, filename[0]))
+    # file0 = np.array(hdu0[0].data)
+    hdu1 = fits.open(os.path.join(dir, filename[1]))
+    # file1 = np.array(hdu1[0].data)
 
+
+
+    data = np.array([[]])
+    for i in range(len(hdu0)):
+        data = np.append(data, hdu0[i].data)
+
+    labels = np.array([[]])
+    for i in range(len(hdu1)):
+        labels = np.append(labels, hdu1[i].data)
+
+    return data, labels 
 
 # Split sample on training and test subsamples
 def open_norm(dir):
@@ -150,23 +186,24 @@ def open_norm(dir):
 
 # print("close dir")
 
-img_size = 32
 # data_dir = Path(os.getcwd())
 
 # df = pd.concat([pd.read_csv(f) for f in data_dir.glob("csv\*.csv")], ignore_index=True)
 # df.to_csv("GLObal.csv", index=False)
-data = np.array([])
-labels = []
+# data = np.array([])
+# labels = np.zeros(())
 
-def h(dir, data, labels, num):
+def h(dir, num):
+    data = np.empty((4*5*num, 64, 64))
+    labels = np.zeros((4*5*num, 4))
     name = []
     radec = []
     imdir = os.listdir(dir)
     for k in range(len(imdir)):
-        list = os.listdir(f"{dir}\{imdir[k]}")
-        print("длина list", len(list))
+        lst = os.listdir(f"{dir}\{imdir[k]}")
+        print("длина list", len(lst))
 
-        for item, file in enumerate(list):
+        for item, file in enumerate(lst):
             # print(item)
             while item < num :  
                 n = file.rstrip(".png")
@@ -174,8 +211,19 @@ def h(dir, data, labels, num):
 
                 with Image.open(f"{dir}\{imdir[k]}\{file}") as img:
                     arr = np.asarray(img)
-                    arr = np.sum(arr, axis=2)
-                data = np.append(data, arr)
+                    arr3 = arr[:,:,1]
+                    arr4 = arr[:,:,2]
+                    arr = np.sum(arr, 2)
+                    
+
+                    arr1 = np.fliplr(arr)
+                    arr2 = np.rot90(arr1)
+
+                data[5*num*k + 5*item] = arr
+                data[5*num*k + 5*item + 1] = arr1
+                data[5*num*k + 5*item + 2] = arr2
+                data[5*num*k + 5*item + 3] = arr3
+                data[5*num*k + 5*item + 4] = arr4
                 break
     # print(data.shape, "datash1")
     data = data.reshape(-1, 64, 64)
@@ -191,7 +239,7 @@ def h(dir, data, labels, num):
 
 
     print('записали data ')
-    new_name = []
+    # new_name = []
     for k in range(1,len(cgi)):
         find_kolvo = 0
         for i in range(num):
@@ -200,23 +248,19 @@ def h(dir, data, labels, num):
                 reader = csv.reader(csvfile, delimiter='|')
                 # print(reader.dialect)
                 for key in reader:
-                    # if (key[1].strip() != name[(k-1)*num+i]) :
-                        # break
-
+                    
                     if (key[0][0] != '!')and(key[1].strip() == name[(k-1)*num+i]):
 
                         line = key[0].lstrip("nearest:B ")
                         lineRA, lineDEC = line.split()
                         radec.append([name[(k-1)*num+i], lineRA, lineDEC])
-                        new_name.append(key[1].strip())
+                        # new_name.append(key[1].strip())
                         find_kolvo += 1
                     
                         break
 
 
-                    # if k :
-                        # print(name[(k-1)*num+i])
-        print(find_kolvo, " это м которое показывает сколько галактик конкретног типа мы отобрали")
+        print(find_kolvo, "galaxies from", imdir[k-1])
     
 
 
@@ -234,38 +278,71 @@ def h(dir, data, labels, num):
                     for key in reader: 
 
                         if (radec[ k*num + i ][2] == key[2]):
+                            
+                            p = [0, 0, 0, 0]
+                            row = [float(key[3]), float(key[4]), float(key[5]), float(key[6])]
+                            max_var = max(row)
+                            max_idx = row.index(max_var)
+                            # p[max_idx] = 1
+                           
+                            labels[5*num*k + 5*i][max_idx] = 1
+                            labels[5*num*k + 5*i + 1][max_idx] = 1
+                            labels[5*num*k + 5*i + 2][max_idx] = 1
+                            labels[5*num*k + 5*i + 3][max_idx] = 1
+                            labels[5*num*k + 5*i + 4][max_idx] = 1
 
-                            labels.append([key[3], key[4], key[5], key[6]])
-                                    # print(" я не понимаю((())) ")
                             break
 
-
+    datafl = np.zeros((len(radec), 64, 64))
     print('записали вероятности ')
     print(len(labels))
     data = data[:len(labels), :, :]
-    print(data.shape)
+    # for k in range(len(labels)):
+    #     datafl[k,:,:] = np.fliplr(data[ k , : , : ])
+    # data = np.append(data, datafl)
+    # data = data.reshape(-1, 64, 64)
+    print(data.shape, 'data shape add flprl')
 
-    return data, labels
-    # print(labels)
+    return data, np.array(labels)
+
     # print(l, m, ll)
            
-data , list = h("image", data, labels, 250)    
-# print("получила ли я data и labels", len(labels))                  
+data , labels = h("image", 960)  
 
-labels = np.array(list)
+# save_fitsfile(data, "fits", 1)
+# save_fitsfile(labels, "fits", 0)
+# # print("поля вырубай!!!!!")
+# data, labels = open_file("fits")
+# data = data.reshape(-1, 64, 64)
+# labels = labels.reshape(-1, 4)
+print(data.shape, 'data shape saved')
+print(labels.shape, 'labels shape saved')
+
+# print("получила ли я data и labels", len(labels))    
+print(labels[0, :])
 
 # open_norm('image_ACW')
 # open_norm('image_CW')
 # open_norm('image_EDGE')
 # open_norm('image_EL')
 
+img_size = 64
 
-data_train, data_test, labels_train, labels_test =train_test_split(data, labels, test_size=0.20)
-print(data_train.shape, data_test.shape)
+
+data_train, data_test, labels_train, labels_test = \
+            train_test_split(data, labels, test_size = 0.20)
+
 data_train = data_train.reshape(-1, img_size, img_size, 1)
 data_test = data_test.reshape(-1, img_size, img_size, 1)
-model = make_model()
-model.fit(data_train, labels_train, validation_data=(data_test, labels_test), epochs=5, batch_size=16)
 
-print('DONE!')
-# print(data_EL[0][1])
+model = make_model()
+    #model = load_model("models/9")
+    #print(model.summary())
+
+
+#     #for i in range(100):
+model.fit(data_train, labels_train, \
+            validation_data = (data_test, labels_test),\
+            epochs = 10, batch_size = 32)
+# print('DONE!')
+# # print(data_EL[0][1])
