@@ -1,7 +1,5 @@
-/Galaxy.csv
-/logd25
-*/*.csv
-/stepa.py
+# /Galaxy.csv
+# /logd25
+# */*.csv
 */*.jpeg
 */*/*.png
-/problem4.py
