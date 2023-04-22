@@ -13,8 +13,7 @@ from keras.models import Sequential
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
 
-# import pandas as pd    #  pip install pandas
-# from pathlib import Path
+
 def save_fitsfile(array, name_dir, m):
     if (os.path.exists(name_dir) == 0):
         os.mkdir(name_dir)
@@ -89,7 +88,6 @@ def make_model():
 # files_writer(data_ACW, 'ACW')
 # files_writer(data_CW, 'CW')
 
-# exit(n )
 
 # print('save file')
 
@@ -105,9 +103,7 @@ def Read_RA_DEC(name, dir, file):
         p = open
         for key in reader:
             if ((key[0][0] != '!')and(key[4].strip() != '') and (10**float(key[4])*6 > 15)):
-                # print(key[0])
-                # print(key[1])
-                # print(key[0])
+              
                 line = key[0].lstrip("nearest:B ")
                 lineRA, lineDEC = line.split()
                 h, m, s = lineRA.split(":")
@@ -117,20 +113,21 @@ def Read_RA_DEC(name, dir, file):
 
                 lineRA = (h*15*3600 + m*15*60 + s*15)/3600
                 lineDEC = (abs(d*3600) + min*60 + sec)/3600
+
                 if int(d)<0:
+
                     lineDEC = lineDEC*(-1)
+
                 line = [lineRA, lineDEC,float(key[4].strip()), key[1].strip()]
 
-                # line.append(float(key[4].strip()))
                 listCW.append(line)
-    print(len(listCW))
-#     используем url для доступа к серверу
+
+    # используем url для доступа к серверу
     for item in range(len(listCW)):
         if (item < 1000):
             scale = listCW[item][2]/1.5
             site = f"https://skyserver.sdss.org/dr14/SkyServerWS/ImgCutout/getjpeg?TaskName=Skyserver.Explore.Image&ra={listCW[item][0]}&dec={listCW[item][1]}&scale={scale}&width=64&height=64"
             urlretrieve(site, f"image_{name}\image_{listCW[item][3]}.png")
-    # print(name)
            
 # Read_RA_DEC("ACW", 'logd25' , list[1])
 # Read_RA_DEC("CW", 'logd25', list[2])
@@ -142,10 +139,6 @@ def Read_RA_DEC(name, dir, file):
 # print(listCW[5][0])
 # print(listCW[5][1])
 # print(len(reader))
-
-# используем url для доступа к серверу
-# site = f"http://skyserver.sdss.org/dr14/SkyServerWS/ImgCutout/getjpeg?TaskName=Skyserver.Explore.Image&ra={args.ra}&dec={args.dec}&scale=0.5&width={args.w}&height={args.h}&opt=G"
-# urlretrieve(site, f"{args.name}.jpeg")
 
 def open_file(dir):
     filename = os.listdir(dir)
@@ -184,18 +177,10 @@ def open_norm(dir):
             arr = arr/max
             
 
-# print("close dir")
-
-# data_dir = Path(os.getcwd())
-
-# df = pd.concat([pd.read_csv(f) for f in data_dir.glob("csv\*.csv")], ignore_index=True)
-# df.to_csv("GLObal.csv", index=False)
-# data = np.array([])
-# labels = np.zeros(())
 
 def h(dir, num):
-    data = np.empty((4*5*num, 64, 64))
-    labels = np.zeros((4*5*num, 4))
+    data = np.empty((4*3*num, 64, 64))
+    labels = np.zeros((4*3*num, 4))
     name = []
     radec = []
     imdir = os.listdir(dir)
@@ -211,19 +196,14 @@ def h(dir, num):
 
                 with Image.open(f"{dir}\{imdir[k]}\{file}") as img:
                     arr = np.asarray(img)
-                    arr3 = arr[:,:,1]
-                    arr4 = arr[:,:,2]
                     arr = np.sum(arr, 2)
-                    
-
                     arr1 = np.fliplr(arr)
                     arr2 = np.rot90(arr1)
 
-                data[5*num*k + 5*item] = arr
-                data[5*num*k + 5*item + 1] = arr1
-                data[5*num*k + 5*item + 2] = arr2
-                data[5*num*k + 5*item + 3] = arr3
-                data[5*num*k + 5*item + 4] = arr4
+                data[3*num*k + 3*item] = arr
+                data[3*num*k + 3*item + 1] = arr1
+                data[3*num*k + 3*item + 2] = arr2
+
                 break
     # print(data.shape, "datash1")
     data = data.reshape(-1, 64, 64)
@@ -268,8 +248,7 @@ def h(dir, num):
     
     print('записали ra и dec ')
     print(len(radec), "radec")
-    # print(radec[307])
-    # print("jjjjj")
+
     for k in range(len(pars)):
         for i in range(num):
 
@@ -285,41 +264,19 @@ def h(dir, num):
                             max_idx = row.index(max_var)
                             # p[max_idx] = 1
                            
-                            labels[5*num*k + 5*i][max_idx] = 1
-                            labels[5*num*k + 5*i + 1][max_idx] = 1
-                            labels[5*num*k + 5*i + 2][max_idx] = 1
-                            labels[5*num*k + 5*i + 3][max_idx] = 1
-                            labels[5*num*k + 5*i + 4][max_idx] = 1
+                            labels[3*num*k + 3*i][max_idx] = 1
+                            labels[3*num*k + 3*i + 1][max_idx] = 1
+                            labels[3*num*k + 3*i + 2][max_idx] = 1
 
                             break
 
-    datafl = np.zeros((len(radec), 64, 64))
     print('записали вероятности ')
-    print(len(labels))
-    data = data[:len(labels), :, :]
-    # for k in range(len(labels)):
-    #     datafl[k,:,:] = np.fliplr(data[ k , : , : ])
-    # data = np.append(data, datafl)
-    # data = data.reshape(-1, 64, 64)
-    print(data.shape, 'data shape add flprl')
+
+    print(data.shape, ' new data shape add flprl')
 
     return data, np.array(labels)
-
-    # print(l, m, ll)
            
 data , labels = h("image", 960)  
-
-# save_fitsfile(data, "fits", 1)
-# save_fitsfile(labels, "fits", 0)
-# # print("поля вырубай!!!!!")
-# data, labels = open_file("fits")
-# data = data.reshape(-1, 64, 64)
-# labels = labels.reshape(-1, 4)
-print(data.shape, 'data shape saved')
-print(labels.shape, 'labels shape saved')
-
-# print("получила ли я data и labels", len(labels))    
-print(labels[0, :])
 
 # open_norm('image_ACW')
 # open_norm('image_CW')
@@ -328,21 +285,12 @@ print(labels[0, :])
 
 img_size = 64
 
-
-data_train, data_test, labels_train, labels_test = \
-            train_test_split(data, labels, test_size = 0.20)
+data_train, data_test, labels_train, labels_test = train_test_split(data, labels, test_size = 0.20)
 
 data_train = data_train.reshape(-1, img_size, img_size, 1)
 data_test = data_test.reshape(-1, img_size, img_size, 1)
 
 model = make_model()
-    #model = load_model("models/9")
-    #print(model.summary())
+model.fit(data_train, labels_train, validation_data = (data_test, labels_test), epochs = 1, batch_size = 32)
 
-
-#     #for i in range(100):
-model.fit(data_train, labels_train, \
-            validation_data = (data_test, labels_test),\
-            epochs = 10, batch_size = 32)
-# print('DONE!')
-# # print(data_EL[0][1])
+model.save("pop")
