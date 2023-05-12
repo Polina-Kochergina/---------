@@ -291,6 +291,6 @@ data_train = data_train.reshape(-1, img_size, img_size, 1)
 data_test = data_test.reshape(-1, img_size, img_size, 1)
 
 model = make_model()
-model.fit(data_train, labels_train, validation_data = (data_test, labels_test), epochs = 1, batch_size = 32)
+model.fit(data_train, labels_train, validation_data = (data_test, labels_test), epochs = 10, batch_size = 32)
 
-model.save("pop")
+model.save("model.h5")
