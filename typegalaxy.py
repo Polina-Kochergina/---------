@@ -322,3 +322,4 @@ with Image.open('''image_CW\image_PGC1431757.png''') as file:
 ynew = model.predict(Xnew)
 print(ynew)
 # ура! это все
+# что с гитом..
